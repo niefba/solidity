@@ -20,6 +20,10 @@ contract Lotto {
         owner = msg.sender;
     }
 
+    
+    event Transfer (address indexed _from, address indexed _to, uint amount);
+    event Log(address indexed sender, string message);
+
     function checkGrid(uint[] memory numbers) pure  private returns (bool) {
         // Grid should have 6 numbers
         if (numbers.length != 6) {
@@ -42,10 +46,11 @@ contract Lotto {
     }
 
     function play(uint[] memory numeros) payable  public {
-        require(msg.value == 1000 gwei, "Insuffisante value");
+        require(msg.value == 1 gwei, "Insuffisante value");
         require(checkGrid(numeros), "Invalid grid");
         
-        jackpot += 1000 gwei;
+        jackpot += 1 gwei;
+
         Grid memory current;
         current.numeros = numeros;
         current.player = msg.sender;
@@ -100,44 +105,67 @@ contract Lotto {
         
     }
 
-    function payment() public returns (uint[] memory) {
+    function payment() public {
+        require(msg.sender == owner, "Not allowed");
         require(results.length == 6, "Waiting for Tirage");
         
 
         for (uint i=0; i<playerGrids.length; i++) {
+            uint countMatching = 0;
             for (uint j=0; j<playerGrids[i].numeros.length; j++) {
-                uint countMatching = 0;
                 for (uint k=0; k < results.length; k++) {
                     if (results[k] == playerGrids[i].numeros[j]) {
                         countMatching++;
                     }
                 }
-                if(countMatching == 6) {
-                    rankOne.push(playerGrids[i].player);
-                }
-                else if(countMatching == 5) {
-                    rankTwo.push(playerGrids[i].player);
-                }
-                else if(countMatching == 4) {
-                    rankThree.push(playerGrids[i].player);
-                }
-
+            }
+            
+            if(countMatching == 6) {
+                rankOne.push(playerGrids[i].player);
+            }
+            else if(countMatching == 5) {
+                rankTwo.push(playerGrids[i].player);
+            }
+            else if(countMatching == 4) {
+                rankThree.push(playerGrids[i].player);
             }
 
         }
 
         // Jackpot for rank one
-        uint jackpotRankOne = (jackpot * 60 / 100) / rankOne.length;
-
-        //uint jackpotRankOne = jackpot / 2;
-
-        // Send payment to players of rank one
-        for (uint i=0; i < rankOne.length; i++) {
-            (bool success, ) = rankOne[i].call{value:jackpotRankOne}("");
-            require(success, "Transfer failed.");
+        if (rankOne.length >= 1) {
+            sendPaymentByRank(rankOne, (jackpot * 60 / 100) / rankOne.length);
         }
 
-        return results;
+        // Jackpot for rank two
+        if (rankTwo.length >= 1) {
+            sendPaymentByRank(rankTwo, (jackpot * 20 / 100) / rankTwo.length);
+        }
+
+        // Jackpot for rank three
+        if (rankThree.length >= 1) {
+            sendPaymentByRank(rankThree, (jackpot * 10 / 100) / rankThree.length);
+        }
+
+        // Reset all
+        reset();
+
     }
 
+    function sendPaymentByRank(address[] memory rank, uint amount) private {
+        for (uint i=0; i < rank.length; i++) {
+            emit Transfer(msg.sender, rank[i], amount);
+            (bool success, ) = rankOne[i].call{value:amount}("");
+            require(success, "Transfer failed.");
+        }
+    }
+
+    function reset() private {
+        delete results;
+        delete rankOne;
+        delete rankTwo;
+        delete rankThree;
+        delete playerGrids;
+        jackpot = 0;
+    }
 }
