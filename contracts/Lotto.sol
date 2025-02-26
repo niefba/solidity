@@ -18,8 +18,22 @@ contract Lotto {
     }
 
     function checkGrid(uint[] memory numbers) pure  private returns (bool) {
+        // Grid should have 6 numbers
         if (numbers.length != 6) {
             return false;
+        }
+        for (uint i=0; i<numbers.length; i++) {
+            // Numbers should be between 1 and 50
+            if (numbers[i] < 1 || numbers[i] > 50) {
+                return false;
+            }
+            // Numbers should be unique
+            for (uint j=i+1; j<numbers.length; j++) {
+                if (numbers[i] == numbers[j]) {
+                    return false;
+                }
+            }
+
         }
         return true;
     }
@@ -54,9 +68,22 @@ contract Lotto {
 
     function tirage() public {
         require(msg.sender == owner, "Not allowed");
-        
-        for (uint i = 0; i < 6; i++) {
-            results[i] = getRandomNumber(i);
+        uint seed = 0;
+
+        // Pull 6 unique random numbers between 1 and 50
+        while (results.length < 6) {
+            seed++;
+            uint number = getRandomNumber(seed);
+            bool isUnique = true;
+            for (uint i=0; i<results.length; i++) {
+                if (results[i] == number) {
+                    isUnique = false;
+                    break;
+                }
+            }
+            if (isUnique) {
+                results.push(number);
+            }
         }
         
     }
