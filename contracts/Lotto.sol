@@ -57,10 +57,6 @@ contract Lotto {
         playerGrids.push(current);
     }
 
-    function retrieve() public view returns (Grid[] memory) {
-        return playerGrids;
-    }
-
     function viewJackpot() public view returns (uint) {
         return jackpot;
     }
@@ -78,9 +74,11 @@ contract Lotto {
         return uint8((randomHash % 50) + 1); // Ensures the result is between 1 and 50
     }
 
-    function fakeTirage() public {
+    function fakeTirage123456() public {
         require(msg.sender == owner, "Not allowed");
         results = [1,2,3,4,5,6];
+
+        payment();
     }
 
     function tirage() public {
@@ -102,13 +100,12 @@ contract Lotto {
                 results.push(number);
             }
         }
+
+        payment();
         
     }
 
-    function payment() public {
-        require(msg.sender == owner, "Not allowed");
-        require(results.length == 6, "Waiting for Tirage");
-        
+    function payment() private {
 
         for (uint i=0; i<playerGrids.length; i++) {
             uint countMatching = 0;
@@ -155,7 +152,7 @@ contract Lotto {
     function sendPaymentByRank(address[] memory rank, uint amount) private {
         for (uint i=0; i < rank.length; i++) {
             emit Transfer(msg.sender, rank[i], amount);
-            (bool success, ) = rankOne[i].call{value:amount}("");
+            (bool success, ) = rank[i].call{value:amount}("");
             require(success, "Transfer failed.");
         }
     }
