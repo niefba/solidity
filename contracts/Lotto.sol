@@ -5,10 +5,10 @@ pragma solidity >=0.8.2 <0.9.0;
 contract Lotto {
 
     address private owner;
-    uint[6] results;
+    uint[] results;
     uint jackpot = 0;
     struct Grid {
-        uint[6] numeros;
+        uint[] numeros;
         address player;
     }
     Grid[] playerGrids;
@@ -17,9 +17,16 @@ contract Lotto {
         owner = msg.sender;
     }
 
-    function play(uint[6] memory numeros) payable  public {
+    function checkGrid(uint[] memory numbers) pure  private returns (bool) {
+        if (numbers.length != 6) {
+            return false;
+        }
+        return true;
+    }
+
+    function play(uint[] memory numeros) payable  public {
         require(msg.value == 10 wei, "Insuffisante value");
-        require(numeros.length == 6, "Invalid array");
+        require(checkGrid(numeros), "Invalid grid");
         
         jackpot += 10;
         Grid memory current;
@@ -54,7 +61,7 @@ contract Lotto {
         
     }
 
-    function payment() public view returns (uint[6] memory) {
+    function payment() public view returns (uint[] memory) {
         require(results.length == 6, "Waiting for 6 results");
         return results;
     }
